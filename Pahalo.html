@@ -1,0 +1,3576 @@
+<!--------------------------------- ----------------------------------->
+<!--------------------------------- ----------------------------------->
+<!-- Author: Henrique Matheus da Silva Lima --------------------------->
+<!-- License: MIT ----------------------------------------------------->
+<!-- Version: 1.00 ---------------------------------------------------->
+<!--------------------------------- ----------------------------------->
+<!--------------------------------- ----------------------------------->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<meta content="width=device-width,initial-scale=1" name="viewport"/>
+		<meta name="copyright" content="
+		MIT License
+
+		Copyright (c) Henrique Matheus da Silva Lima
+
+		Permission is hereby granted, free of charge, to any person obtaining a copy
+		of this software and associated documentation files (the 'Software'), to deal
+		in the Software without restriction, including without limitation the rights
+		to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+		copies of the Software, and to permit persons to whom the Software is
+		furnished to do so, subject to the following conditions:
+
+		The above copyright notice and this permission notice shall be included in all
+		copies or substantial portions of the Software.
+
+		THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+		IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+		FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+		AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+		LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+		OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+		SOFTWARE.
+
+		" />
+		<title>Ingerish-Pahalo Dictionary</title>
+		<!--------------------------------- ----------------------------------->
+		<!------------------------------ CSS code ----------------------------->
+		<!--------------------------------- ----------------------------------->
+		<style>
+			body {background-color: #8E9150;}
+			p {text-indent: 30px; text-align: justify; line-height: 30px;}
+			a:link{text-decoration:none; font-weight:bold;}
+			a:visited{text-decoration:none; font-weight:bold;}
+			a:hover{text-decoration:none; font-weight:bold;}
+			a:active{text-decoration:none; font-weight:bold;}
+			.box {background-color: #FBFBE7; width: 50%; margin: auto; margin-bottom: 10px; padding: 10px 20px;}
+			.code {background-color: #281818; color: #00FF26; padding: 3px; font-size: 0.8em;}
+			.js_dictionar_table {width: 100%; border-collapse: collapse;}
+			.js_dictionar_table_part {background-color: #D6D3D3; border: 1px solid black; padding-left: 5px; padding-right: 5px; font-weight: normal;}
+			.js_dictionar_table_part_noresult {background-color: #F1F2DE; border: 1px solid black; padding-left: 5px; padding-right: 5px; font-weight: normal;}
+			.js_dictionar_table_part1 {background-color: #CECFB0; border: 1px solid black; padding-left: 5px; padding-right: 5px; width: 20%;}
+			.js_dictionar_table_part2 {background-color: #F1F2DE; border: 1px solid black; padding-left: 5px; padding-right: 5px;}
+			.highlight {text-decoration: underline; font-weight: bold;}
+			#title {font-size: 1.5em; font-weight: bold; text-align: center;}
+			#version {font-size: 0.9em; font-weight: bold; font-style: italic; text-align: center;}
+			#inputTextArea {display: inline-block; width: 60%; text-align: left;}
+			#buttonDictionar {margin-right: 5px; display: inline;}
+			#listOfWords {display: none;}
+			#result {display: none;}
+			
+			
+			@media screen and (max-width: 1280px)
+			{
+				.box {width: 80%;}
+			}
+			
+			@media screen and (max-width: 800px)
+			{
+				.box {width: 90%;}
+			}
+		</style>
+		
+		<!--------------------------------- ----------------------------------->
+		<!-------------------------- JavaScript code -------------------------->
+		<!--------------------------------- ----------------------------------->
+		
+		<script type="text/javascript">
+			function startSbSearch (source_of_words, input_div, output_div, lang) {
+				// Getting the values
+				var list_of_words = document.getElementById(source_of_words).innerHTML;
+				var word = document.getElementById(input_div).value;
+				var word_lower_case = word.toLowerCase();
+				var word_upper_case = word.toUpperCase();
+				var word_upper_case_first_letter = word.charAt(0).toUpperCase() + word_lower_case.slice(1);
+				
+				// The texts in different languages
+				var result_entry_text = "";
+				var result_definition_text = "";
+				var no_result = "";
+				
+				if (lang == 0) { // Pahalo
+					result_entry_text = "Ahudzéy né léékaa héé";
+					result_definition_text = "Ahudzéy né definision héé";
+					no_result = "Iiió ahudzéy";
+					search_word = "MIIDZIILE";
+				}
+				else if (lang == 1) { // Brazilian Portuguese
+					result_entry_text = "Resultados de entradas com";
+					result_definition_text = "Resultados de definições com";
+					no_result = "Nenhum resultado";
+					search_word = "PROCURAR";
+				}
+				else if (lang == 2) { // Spanish
+					result_entry_text = "Resultados de entradas con";
+					result_definition_text = "Resultados de definiciones con";
+					no_result = "Sin resultados";
+					search_word = "BUSCAR";
+				}
+				else if (lang == 3) { // French
+					result_entry_text = "Résultats des entrées avec";
+					result_definition_text = "Résultats des définitions avec";
+					no_result = "Aucun résultat";
+					search_word = "CHERCHER";
+				}
+				else if (lang == 4) { // Esperanto
+					result_entry_text = "Rezultoj de la termoj  kun";
+					result_definition_text = "Rezultoj de la difinoj  kun";
+					no_result = "Sen rezultoj";
+					search_word = "SERĈI";
+				}
+				else { // English
+					result_entry_text = "Results of entries with";
+					result_definition_text = "Results of definitions with";
+					no_result = "No results";
+					search_word = "SEARCH";
+				}
+				
+				// Checks whether the input is valid
+				var valid_input = true;
+				if ((word == "") || (word == " ") || (word == "  ") || (word == "   ") || (word == "	")) {
+					valid_input = false;
+				}
+				
+				// Counter to save CPU in case of searchs that returns too many results
+				var cpu_saver = 0;
+				
+				// To count whether at least one result was found
+				var at_least_one_result = 0;
+				
+				// Define the maximum number of results
+				var MAX_RESULTS = 100;
+				
+				// Cleaning the result DIV for new searchs
+				document.getElementById(output_div).innerHTML = "";
+				
+				// Variable that will store the highlited definition
+				var highlighted_text = "";
+				
+				// Getting the lines
+				var line = list_of_words.split("\n");
+				var entry; // I will use this variable to split the lines
+				
+				// Now we search in the word side
+				document.getElementById(output_div).innerHTML += "<table class='js_dictionar_table'><tr><th class='js_dictionar_table_part'><b>" + result_entry_text + " \"</b>" +  word + "<b>\"</b></th></tr></table>";				
+				
+				cpu_saver = 0;
+				at_least_one_result = 0;
+				for (var count = 0; count < line.length; count++) {
+					entry = (line[count]).split("\t");
+					if (entry[1] !== undefined && valid_input) {
+						// if (entry[0].search(word) !== -1) {
+						if ((entry[0].search(word) !== -1) || (entry[0].search(word_lower_case) !== -1) || (entry[0].search(word_upper_case) !== -1) || (entry[0].search(word_upper_case_first_letter) !== -1)) {
+							document.getElementById(output_div).innerHTML += "<table class='js_dictionar_table'>" + "<tr>" + "<td class='js_dictionar_table_part1'>" + entry[0] + "</td>" + "<td class='js_dictionar_table_part2'>" + entry[1] + "</td>" + "</tr>" + "</table>";
+							cpu_saver++;
+							at_least_one_result++;
+							if (cpu_saver >= MAX_RESULTS) {
+								count = line.length;
+							}
+						}
+					}
+				}
+				if (at_least_one_result == 0) {
+					document.getElementById(output_div).innerHTML += "<table class='js_dictionar_table'><tr><td class='js_dictionar_table_part_noresult'><i>" + no_result + "</i></td></tr></table>";
+				}
+				
+				// And then in the definition side
+				document.getElementById(output_div).innerHTML += "<br><table class='js_dictionar_table'><tr><th class='js_dictionar_table_part'><b>" + result_definition_text + " \"</b>" +  word + "<b>\"</b></th></tr></table>";				
+				
+				cpu_saver = 0;
+				at_least_one_result = 0;
+				for (var count = 0; count < line.length; count++) {
+					entry = (line[count]).split("\t");
+					if (entry[1] !== undefined && valid_input) {
+						// if (entry[0].search(word) === -1 && entry[1].search(word) !== -1) { // This "entry[0].search(word) === -1" is here to avoid repetitions from the previous loop
+						if (((entry[0].search(word) === -1) && (entry[0].search(word_lower_case) === -1) && (entry[0].search(word_upper_case) === -1) && (entry[0].search(word_upper_case_first_letter) === -1)) && ((entry[1].search(word) !== -1) || (entry[1].search(word_lower_case) !== -1) || (entry[1].search(word_upper_case) !== -1) || (entry[1].search(word_upper_case_first_letter) !== -1))) { // This "entry[0].search(word) === -1" is here to avoid repetitions from the previous loop
+							if (entry[1].search(word_lower_case) !== -1) {
+								highlighted_text = entry[1].replace(word_lower_case, "<span class='highlight'>" + word_lower_case + "</span>");
+							}
+							else if (entry[1].search(word_upper_case) !== -1) {
+								highlighted_text = entry[1].replace(word_upper_case, "<span class='highlight'>" + word_upper_case + "</span>");
+							}
+							else if (entry[1].search(word_upper_case_first_letter) !== -1) {
+								highlighted_text = entry[1].replace(word_upper_case_first_letter, "<span class='highlight'>" + word_upper_case_first_letter + "</span>");
+							}
+							else {
+								highlighted_text = entry[1].replace(word, "<span class='highlight'>" + word + "</span>");
+							}
+							
+							
+							//highlighted_text = entry[1].replace(word, "<span class='highlight'>" + word + "</span>");
+							//highlighted_text = entry[1].replace(word_lower_case, "<span class='highlight'>" + word_lower_case + "</span>");
+							//highlighted_text = entry[1].replace(word_upper_case, "<span class='highlight'>" + word_upper_case + "</span>");
+							document.getElementById(output_div).innerHTML += "<table class='js_dictionar_table'>" + "<tr>" + "<td class='js_dictionar_table_part1'>" + entry[0] + "</td>" + "<td class='js_dictionar_table_part2'>" + highlighted_text + "</td>" + "</tr>" + "</table>";
+							cpu_saver++;
+							at_least_one_result++;
+							if (cpu_saver >= MAX_RESULTS) {
+								count = line.length;
+							}
+						}
+					}
+				}
+				if (at_least_one_result == 0) {
+					document.getElementById(output_div).innerHTML += "<table class='js_dictionar_table'><tr><td class='js_dictionar_table_part_noresult'><i>" + no_result + "</i></td></tr></table>";
+				}
+				
+				document.getElementById(output_div).style.display = "block";
+			}
+		</script>
+	</head>
+	<body>
+		<div class="box">
+<div id="listOfWords">
+<!--------------------------------- ----------------------------------->
+akutsi	annoy
+a	much
+a'aa	only
+a'ee	level
+a'ee	rank (position)
+a'ii	bend
+a'ii	fold
+a'oo	hello
+a'umbo	moon
+a'umbo	month
+a'uu	candy
+aa	about
+aa	concerning
+aa	regarding
+aa	be (located)
+aami	the (ani. sg.)
+aamy	the (ani. pl.)
+abaa	already
+abuióó	city
+abuióó	downtown
+abuióó	metropolis
+achéé	dagger
+achibéé	plane
+acta	science
+acta tséézó	astronomy
+acté	remove
+acté	take out
+acté	deprive
+acté	take away
+acté	abolish
+acté	expel
+actóó	touch
+adaa	color
+adaa	hue
+adii	sorry
+adzé	coal
+adzé	topic
+adzéé	member
+adzii	challenge
+adzó	wine
+aga	feather
+aga	pen
+agoo	cake
+agoo	project
+agoo	enterprise
+aha	follow
+ahaa	match (for fire)
+ahé	dirt
+ahé	mud
+ahóó	settle
+ahudzé	result
+ahudzé	outcome
+ahuu	public
+aia	everything
+aiaa	compliment
+aiee	million
+aiéé	side
+aiéé	border
+aiéé	boundary
+aiéé	perimeter
+akee	fragile
+akibé	beard
+akuu	shoe
+alee	paper
+alii	eighteen
+aloo	stomach
+aloo	gut
+ama	nod
+amaa	park
+ambé	storm
+ambóó	ash
+amé	talk
+amé	speak
+amé	pronounce
+amee	wide
+amee	broad
+améé	chief
+amii	hospital
+amii	ward
+amoo	find
+amoo	detect
+amoo	encounter
+amoo	uncover
+amoo	rub
+amoo	stroke
+amoo	massage
+ana	bar (pub)
+anaa	belt
+ane	god
+ané	blue
+angé	increase
+angé	expand
+angéé	cry
+angéé	weep
+angóó	price
+angóó	fee
+angóó	fare
+anole	potato
+anóó	red
+anuu	seek
+apa	physical
+apa	tangible
+ape	lift
+apiió	comfort
+apuu	few
+asé	finish
+asé	complete
+asé	expire
+asee	tie
+ashaa	graduate
+ashee	treat
+ashéé	humor
+ashendea	Allendea
+ashuu	cotton
+ashuu	cloth
+asokii	one
+até	whore
+atidzaa	east
+atóó	lot
+atóó	section
+atóó	segment
+atóó	compartment
+atsaa	soldier
+atsé	request
+atsé	demand
+atsii	moan
+atsii	sigh
+atsuche	turn on
+atsukéé	display
+atsungéé	free
+atuu	case
+atuu	event
+auu	bay
+auu	harbor
+awa	gray
+awii	flesh
+awó	watch
+awoguu	consider
+awomaa	puzzle
+awóó	level
+ayuu	above
+aza	journey
+aza	voyage
+azé	try
+azé	attempt
+azé	test
+azii	idiot
+azii	fool
+azóó	space
+azóó	room (space)
+azuu	hint
+azuu	safe
+azuu	hint
+ba	thin
+ba	slim
+ba'ó	stock
+ba'ó zushulé	vocabulary
+babe	bake
+babé	health
+babii	religion
+babóó	wife
+baché	source
+baché	origin
+baché	fountain
+baché	trouble
+baché	threat
+bachini	law
+bachuu	top (clothing)
+bactee	mean
+bactee	rude
+bactee	crude
+bactee	nasty
+bactó	rank (position)
+bactó	hierarchy
+bactoo	critical
+bada	involve
+bada	entail
+badaa	plus
+badé	solve
+badé	figure out
+badii	skeleton
+badii	hull
+badó	admit
+baduu	here
+baduu	there
+badzaa	pillow
+badzéé	reduce
+badzidze	gun
+badzidze	rifle
+badzidze	pistol
+badzuu	serve
+baé	cabinet
+baé	drawer
+bagé	weird
+bagé	strange
+bagé	bizarre
+bagé	eerie
+bagé	peculiar
+bagee	thread
+bagee	strand
+baha	note
+baha pééwó	notebook
+bahaa	strategy
+bahé	freeze
+bahee	pick
+bahi	device
+bahi	appliance
+bahi	gadget
+bahii	costume
+bahó	so
+bahoo	bell
+baiaa	promise
+baiaa	assure
+baiee	hazard
+baiee	trouble
+baiéé	tongue
+baiéé	language
+baiéé	dialect
+baii	farm
+baiii	silk
+baió	miss (long for)
+baiohé	mint
+baioo	explain
+baioo	describe
+baioo	define
+baióó	town
+baióó	population
+baiuto	struggle
+bakéé	silly
+bakó	might
+bakuu	flirt
+bala	middle
+bala diictaa	middle class
+balaa	will
+balé	squeeze
+balé	clutch
+balee	achieve
+balee	accomplish
+baléé	task
+baloo	bite
+baluu	shield
+bamaa	matter
+bambe	bench
+bame	mean
+bame	imply
+bamoo	enter
+bamóó	trouble
+bamóó	problem
+bane	card
+bané	smash
+bané	shatter
+banéé	breast
+banguu	reward
+banguu	award
+banguu	medal
+banguu	profit
+banii	heart
+banii	soul
+banóó	trick
+banóó	deceive
+bapé	fish
+bapii	agency
+bapó	son
+basaa	ago
+base	form
+base	appearance
+basha	bug
+basha	insect
+bashaa	each
+basuu	cause
+basuu	induce
+basuu	cause
+bata	wave (salutation)
+baté	wool
+batobee	educate
+batsaa	calculate
+batsoo	drain
+batsoo	reduce
+bawé	little
+bawoo	doll
+baza	horizon
+baza	important
+bazaa	deal
+baze	define
+baze	hood
+bazéé	chalet
+bazihuu	tower
+bazóó	complicated
+bazóó	complex
+bazozó	lake
+bee	well
+beemiizuu	ancestor
+bii	no
+bii'a	small
+bii'a	short
+bii'a	low
+bii'ó	fair
+bii'ó	just
+bii'óó	path
+bii'óó	track
+bii'óó	road
+biia	wood
+biia héépuu	raft
+biibé	exist
+biibuu	choose
+biibuu	select
+biiché	perfect
+biichó	earn
+biictaa	scene
+biictaa	stage
+biictee	perceive
+biidé	zero
+biidza	read
+biidzaa	instead
+biidzii	cut
+biidzii	divide
+biidzó	cigarette
+biidzó	cigar
+biidzoo	appreciate
+biidzóó	meat
+biidzóó	flesh
+biidzóó	fish
+biigó	ticket
+biihaa	mud
+biihaa	swamp
+biihuu	picture
+biiié	war
+biiié	battle
+biiioo	date
+biiioo	go out
+biiiuu	road
+biiiuu	street
+biiiuu	avenue
+biila	soap
+biilishó	ask
+biilishó	request
+biilishó	appeal
+biilishó	inquire
+biimaa	dress
+biimé	valley
+biinaa	right
+biinaa	correct
+biinaa	appropriate
+biinee	bend
+biinee	fold
+biinee	lean
+biingó	mist
+biinguiii	general
+biinoo	milk
+biinoshóó	fat
+biinoshóó	fat
+biipé	sell
+biipumbéé	wrong
+biisé	ahead
+biishó	almost
+biishumé	medicine
+biishuu	great
+biita	band
+biitee	line
+biitee	column
+biitee	pillar
+biitii	boil
+biitóó	rice
+biitsuu	circle
+biitsuu	sphere
+biiwé	boss
+biiwuu	recipe
+biiya	university
+biiya	academy
+biiza	market
+biize	baby
+biize	infant
+biizé	waist
+biizee	attitude
+biizii	dub
+biizuu	worm
+bó	be (age)
+bó	those
+bokó	motorway
+bóó	be (exist)
+bóó	five
+cta	down
+cta	two
+cta	down
+cta'a	lie
+cta'a	lie
+cta'é	verse
+ctache	lake
+ctache	pool
+ctachuu	vein
+ctactaa	transport
+ctade	blood
+ctadee	justice
+ctadee	law
+ctaduchó	heaven
+ctaduchó	paradise
+ctadze	stream
+ctadzii	soft
+ctadziye	guy
+ctadzome	screw
+ctagé	unless
+ctagee	program
+ctagéé	frequent
+ctagó	lead
+ctahe	meanwhile
+ctahé	preparation
+ctahee	print
+ctahó	bread
+ctahoo	narrow
+ctahóó	mix
+ctahoo iutséé	coffin
+ctaié	remember
+ctaié	recognize
+ctaió	even
+ctakii	honor
+ctakii	integrity
+ctakilé	actually
+ctakóó	alone
+ctakuu	ship
+ctale	crush
+ctambó	benefit
+ctambó	profit
+ctamé	erection
+ctamii	no
+ctamodzé	goat
+ctané	mind
+ctané	soul
+ctané acta	psychology
+ctange	collect
+ctange	deposit
+ctange	gather
+ctange	compile
+ctangé	dictionary
+ctanoo	let
+ctanoo	allow
+ctanoo	permit
+ctanóó	stump
+ctape	piece
+ctape	item
+ctape	portion
+ctapé	always
+ctapé	all the time
+ctasé	research
+ctasé	research
+ctashoné	thick
+ctashoo	exact
+ctashoo	precise
+ctashoo	definite
+ctashudzuu	species
+ctasii	shock
+ctasii	stun
+ctataa	draw
+ctatse	second
+ctatsoo	birth
+ctatsuti	moan
+ctauu	use
+ctauu	utilize
+ctauu	operate
+ctauu	perform
+ctauu	treat
+ctauu	use
+ctawe	planet
+ctawó	current
+ctawóó	usual
+ctazé	clothes
+ctazé	clothing
+ctazé	garment
+ctazé	noise
+ctazó	shadow
+ctazóó	sound
+ctazóó	audio
+ctazóó	voice
+ctazóó	music
+ctee	slim
+ctó	family
+ctó	tribe
+ctó	kin
+ctóó	other
+daa	first
+daa	or
+dee	tell
+dee	explain
+dee	notify
+dee	inform
+dee	alert
+dii	sick
+dii	ill
+dii	unwell
+dii	what
+diicha	network
+diiche	row
+diiché	polish
+diichuu	cloak
+diictaa	class
+diictaa dziimaa	lower class
+diidza	grandmother
+diidzé	hell
+diidzé	review
+diidzé	analyze
+diidzé	scrutinize
+diidzó	excite
+diigaa	food
+diigaa	meal
+diigaa	nutrition
+diigaa	cuisine
+diigaa	husband
+diige	rule
+diihe	oven
+diihé	attention
+diihee	sad
+diihó	ready
+diiiaa	contain
+diiie	property
+diiiee	gate
+diiiii	half
+diiió	play (stage play)
+diile	center
+diile	core
+diilé	niece
+diime	review
+diimé	economy
+diimé	identify
+diimé	point out
+diimé	diagnose
+diinga	snap
+diingaa	knot
+diingé	sport
+diishuu	wedding
+diisó	region
+diisó	territory
+diita	chain
+diita	bracelet
+diitó	horn
+diitó	penis
+diitóó	file
+diitsa	corner
+diiwe	subject
+diiwé	such
+diiwó	trap
+diize	brain
+duu	let
+duu	allow
+duu	permit
+duu	approve
+duu	endorse
+duuahóó	settlement
+duuakutsi	annoying
+duuasé	completion
+duuashee	treatment
+duubabii	religious
+duubachini	legal
+duubadzuu	service
+duubaioo	explanation
+duubaioo	description
+duubamoo	entrance
+duubiibé	existence
+duubiibuu	choice
+duubiictee	perception
+duubiipé	sale
+duubiishumé	medical
+duuctanoo	permission
+duudiidzé	analysis
+duudiidzó	excitement
+duudiimé	economic
+duudziikolo	pressure
+duudziiluu	election
+duudziingó	reference
+duudziipa	repetition
+duuezumaa	response
+duuguhé	suggestion
+duuguzoo	memory
+duuhe	hearing
+duuhéédzee	cultural
+duuhenona	fight
+duuiizumuu	oral
+duuiukumbu	flight
+duuiushéé	decision
+duuiuuba	discussion
+duuiuuma	protection
+duuiuupaa	growth
+duuiuupé	argument
+duuléédza	death
+duulééga	victory
+duulééngii	training
+duumadzozi	control
+duumangii	belief
+duumbalaa	guess
+duumiiné	technological
+duumiinó	personal
+duumuudzudzéé	national
+duumuudzungóó	exam
+duumuudzungóó	test
+duumuusóó	development
+duumuuwó	reflection
+duumuuzóó	discovery
+duunukombo	destruction
+duunuuluu	appearance (act of appearing)
+duunuumé	natural
+duupéénuu	laugh
+duushuu	academic
+duushuuzé	political
+duusubó	division
+duusungee	start
+duusungee	beginning
+duutseshe	pleasure
+duuuu'ii	painting
+duuuubuu	thought
+duuuungaa	arrival
+duuuuwéé	failure
+duuwadzii	recognition
+duuwalé	behavior
+duuwalé	action
+duuwanaa	loss
+duuwapidze	movement
+duuwapidze	motion
+duuyu	help
+duuyuchuze	industrial
+duuzuu'ó	spelling
+duuzuudzé	strong
+dzaa	by (agent performing an action)
+dzaa	by (author or creator)
+dzaa	see
+dzaa	understand
+dzaa	realize
+dzaa	take
+dzaa	arrest
+dzee	group
+dzee	community
+dzee	bunch
+dzee	flock
+dzee	man
+dzii	can
+dzii	get
+dzii	obtain
+dzii	take
+dzii	if
+dzii	whether
+dzii'a	ban
+dzii'a	prohibit
+dzii'a	restrict
+dzii'a	restrain
+dzii'e	although
+dzii'ó	home
+dzii'ó	spell (of magic)
+dziia	hit
+dziia	beat (strike)
+dziiamee	width
+dziibaa	love
+dziibaa	admire
+dziibahé	frost
+dziibe	leave
+dziibiiché	perfection
+dziibiidzii	cut
+dziibuyee	adult
+dziicha	mass
+dziicha	worth
+dziichaa	money
+dziichaa tsééshii	bank
+dziiché	full
+dziichó	angle
+dziichó	corner
+dziichóó	ground
+dziichuu	scissors
+dziictataa	drawing
+dziictee	message
+dziictee	note
+dziidaa	whose
+dziidii	church
+dziidii	shrine
+dziidii	front
+dziidii	sickness
+dziidii	illness
+dziidiihee	sadness
+dziidiihee	sorrow
+dziidza	assassin
+dziidza	manage
+dziidzaa	lip
+dziidzaa aga	lipstick
+dziidzé	greed
+dziidzii	stand
+dziidziime	trade
+dziidziizé	height
+dziidzó	mathematics
+dziidzoo	rake
+dziidzóó	well
+dziidzóó	reservoir
+dziidzumboo	pot
+dziidzuu	black
+dziidzuu	hole
+dziidzuu	ditch
+dziidzuu	tunnel
+dziidzuu	crater
+dziiéémbuu	record
+dziigé	limp
+dziiguiuu	happiness
+dziiguu	yellow
+dziihaa	experience
+dziihaa	grass
+dziihaa	pasture
+dziihaa	experience
+dziihe	castle
+dziihé	west
+dziihee	lean
+dziihee	bow (greet)
+dziihéénoo	critique
+dziihi	wash
+dziihi	flush
+dziihoné	fix
+dziihoné	mend
+dziihoné	repair
+dziihoné	heal
+dziihoné	recover
+dziihuu	instrument
+dziihuu	apparatus
+dziiié	glass
+dziiiiduu	saliva
+dziiió	reason
+dziiió	logic
+dziiiudzii	anger
+dziiiulé	heat
+dziiiumó	characteristic
+dziiiushe	darkness
+dziiiuuii	silence
+dziiiuuwé	subtlety
+dziiiuuzó	hate
+dziikaa	rod
+dziikaa	shaft
+dziikaa	bar
+dziikaa	arm
+dziiké	everyone
+dziiké	query
+dziikee	come
+dziikéé	purpose
+dziikéé	reason
+dziikolo	press
+dziikuu	create
+dziila	girlfriend
+dziile	search
+dziile	look up
+dziile	explore
+dziile	investigate
+dziile	inspect
+dziile	scrutinize
+dziiléédzé	organization
+dziilééié	violence
+dziilemuduu	life
+dziiluu	elect
+dziimaa	small
+dziimaa	little
+dziimaa	short
+dziimaa	low
+dziimangumuu	beauty
+dziimbache	danger
+dziimbaiobé	insurance
+dziimbané	fun
+dziimbóó	roll
+dziimbóó	rotate
+dziime	trade
+dziimé	acid
+dziimé	sail
+dziimé	navigate
+dziiméé	weapon
+dziimii	per
+dziimii	for each
+dziimiichó	moisture
+dziimiime	foreigner
+dziimoo	arm
+dziimoo	wing
+dziimoo	every
+dziimudzé	worry
+dziina	soup
+dziinaa	teach
+dziinaa	instruct
+dziinaa	educate
+dziiné	anymore
+dziiné	crush
+dziiné	grind
+dziinéé	dust
+dziinéé	guess
+dziinéé	speculate
+dziinga	hour
+dziinga	time
+dziinga	off
+dziinge	fog
+dziingii	else
+dziinginii	shape
+dziinginii	pattern
+dziinginii	rhythm
+dziingó	refer
+dziinguu	show
+dziinguu atuu	showcase
+dziini	doctor
+dziinuu	best
+dziinuumihé	sewer
+dziinuuwé	difference
+dziipa	repeat
+dziipa	replicate
+dziipé	goodbye
+dziipééé	knowledge
+dziipéémaa	abuse
+dziipéépuu	confidence
+dziisé	normal
+dziiséé	mail
+dziiséédzé	elevation
+dziisha	smooth
+dziishé	tin
+dziishii	foot
+dziishuu	waste
+dziisóó	pillow
+dziisóó	cushion
+dziisóó	breast
+dziisumaa	bow (weapon)
+dziisumé	building
+dziisutuu	meeting
+dziitaa	fur
+dziitii	message
+dziitó	saddle
+dziitoo	present (time)
+dziitsé	kick
+dziitséésó	relationship
+dziiwé	hotel
+dziiwé	inn
+dziiwé	lodge
+dziiwuu	center
+dziiwuu	heart
+dziiwuu	core
+dziiya	bag
+dziiya	packet
+dziiya dziizó	pocket
+dziiye	shade
+dziiye	umbrella
+dziiyii	fuck
+dziiyii	fur
+dziiyuga	skill
+dziiyuguu	ability
+dziiyuloo	interior
+dziiza	bow (greet)
+dziizé	change
+dziizé	vary
+dziizé	differ
+dziizé	cold
+dziizé	high
+dziizé diictaa	upper class
+dziizó	trousers
+dziizó	pants
+dziizó	without
+dziizohóó	smell (sense with nose)
+dziizude	possibility
+dziizuha	view
+dziizuu	tension
+dzóó	part
+dzudzuu	railway
+dzuu	process
+dzuu	procedure
+e	way
+e	route
+e	course
+é	and
+é	out
+edugoo	fake
+ee	four
+éé	but
+éébii	plant
+éécha	experiment
+ééctii	like
+ééctoo	credit (recognition)
+éédzee	basically
+ééhé	body
+ééhé hecte	vest
+ééié	letter (written document)
+ééka	cloth
+ééka	material
+éélé	play (have fun)
+éélé	compete
+ééloo	environment
+ééma	wood
+ééma	pole
+ééma	leg
+ééma	mast
+ééma	beam
+ééma	stake
+éémbuu	record
+éémee	figure
+éémoo	shark
+éémuu	car
+ééna	high
+ééna	loud
+ééna	noisy
+ééne	vote
+ééné	day
+ééné	date
+éénga	compare
+éénguu	generate
+éénguu	publish
+éénó	throat
+éénuu	triangle
+éépa	ring
+éépé	since
+éépéé	exact
+éépéé	precise
+éépuu	ice
+éésaa	fifteen
+éésé	effect
+ééshéé	expect
+ééta	limit
+ééwó	engine
+ééwó	motor
+éézé	last
+éézé	previous
+éézee	star
+éézee	celebrity
+éézó	officer
+éézó	official
+éézó	deputy
+éézóó	trip
+éézóó	fall
+éézóó	tour
+egodzaa	defense
+egu'ii	nothing
+eiigo	attractive
+elukó	smart
+elukó	intelligent
+elunóó	party
+eme	station
+emipuu	region
+emolaa	game
+emolaa	toy
+engichaa	bottle
+engidaa	everybody
+engowaa	stab
+enitséé	lesson
+enitséé	lecture
+epunoo	butter
+esho'é	diet
+esipaa	support
+esipaa	support
+esoyaa	serve
+esoyaa	deliver
+ezizó	roof
+ezizó	ceiling
+ezongó	pain
+ezumaa	respond
+ezumaa	answer
+ezumaa	reply
+ezumaa	answer
+gé	okay
+gi	not
+gi	parking
+gi	so
+gi	very
+gi	really
+gi	therefore
+gi	thus
+gidziidzumboo	cauldron
+go	for (the purpose of)
+go	these
+gu	feel
+gu	feeling
+gu'a	flow
+gu'a	leak
+gu'aa	kind
+gu'aa	type
+gu'e	want
+gu'e	desire
+gu'é	suck
+gubaa	dragon
+gube	altitude
+gubé	chalk
+gubuu	hallway
+gubuu	corridor
+gubuu	lobby
+guchii	cousin
+guchó	blank
+guchó	plain
+gucté	mill
+gucté	laboratory
+gucté	industry
+guctubó	shelf
+guctubó	rack
+guctubó	counter (flat
+guda	impact
+gudé	liver
+gudee	space (outer)
+gudéé	mess
+gudéé	clutter
+gudóó	coat
+gudóó	jacket
+guduió	however
+gudza	generate
+gudza	develop
+gudza	spawn
+gudza	advance
+gudza	evolve
+gudza	promote
+gudza	propel
+gudzaa	cook (heat food)
+gudzé	file
+gudzé	join
+gudzé	connect
+gudzé	bond
+gudzee	show
+gudzee	exhibit
+gudzee	steam
+gudzéé	nut
+gudzó	fix
+gudzó	mend
+gudzó	repair
+gudzó	cure
+gudzupe	column
+gudzuu	affect
+gudzuu	influence
+gudzuu	persuade
+gue	steal
+gue	rob
+gue	snatch
+guge	minute
+guhé	suggest
+guhó	carcass
+guhoo	demand
+guhóó	vulgar
+guhulo	ornament
+guhulo	accessory
+guhuu	season
+guiaa	citadel
+guié	crawl
+guiéé	hammer
+guiii	plain
+guioné	loop
+guioo	muscle
+guiuu	happy
+gukaa	pull
+guké	sit
+gule	through
+gulóó	accent (of language)
+guluu	hang
+guma	cage
+gumbé	should
+gumboo	past
+gumé	place
+gumé	wet
+gumé	damp
+gumé	moist
+gumombé	report
+gumombé	notify
+gumombé	inform
+gumombé	alert
+gumuu	kill
+gumuu	murder
+guné	imagine
+guné	envision
+gunéé	web
+gungee	ditch
+gunguu	basket
+gunoo	affect
+gunóó	advice
+gupe	sound
+gupe	audio
+gupe	voice
+gupé	age
+gupee	fact
+gusee	listen
+guséé	clock
+gusituu	coin
+guta	have
+guta	take
+guta	grab
+guta	seize
+gutaa	fear
+guté	head
+gutoo	tradition
+gutsa	about
+gutséé	necessary
+gutséé	mandatory
+guwaa	accuse
+guwaa	denounce
+guwé	where
+guwee	dinner
+guwobé	if
+guyé	apple
+guyoo	edge
+guyoo	verge
+guza	tail
+guza tséézó	comet
+guze	share
+guzee	lay
+guzoo	remember
+guzoo	sharp
+guzóó	aroused (sexually)
+guzóó	sin
+guzuhuu	serious
+guzumbuu	woman
+guzuu	beverage
+he	hear
+he'e	luck
+he'e	fluke
+headzó	winery
+hechome	tree
+hecte	shirt
+hectonoo	buy
+hectonoo	purchase
+hectonoo	shop
+hectonoo	business
+hectunó	table
+hedusa	knife
+hedze	nerve
+hedziiméé	armoury
+héé	hundred
+héé	with (accompanied by)
+hééchó	pray
+hééda	link
+hééda	winter
+héédzé	cotton
+héédzé	species
+héédzé	breed
+héédzee	culture
+héége	thorn
+héégee	pool
+hééha	fire (from job)
+hééhé	stubborn
+hééhó	hit
+hééhó	punch
+hééhó	slap
+hééié	excellent
+hééié	fantastic
+hééié	wonderful
+hééié	fabulous
+hééié	terrific
+hééié	superb
+hééké	compete
+héékii	bowl
+héékii	cup
+héékii	container
+héékii	mug
+hééla	make
+hééla	build
+hééla	construct
+hééla	create
+hééla	cause
+hééla	found
+hééló	nose
+hééma	thunder
+héémé	fact
+héémé	evidence
+héémuu	average
+hééné	doubt
+héénge	against
+héénoo	criticize
+héépuu	float
+hééshaa	siege
+hééshéé	reason
+hééshéé	logic
+hééshéé	rationale
+héésó	give
+héésó	deliver
+héésóó	several
+héésuu	rock
+héésuu	stone
+héésuu	mountain
+héétaa	alcohol
+héétii	fill
+héétóó	back (of body)
+héétóó	back (reverse side)
+héétsó	set
+hééwé	busy
+hééwó	search
+hééwó	look up
+hééya	poem
+héézee	escape
+héézee	flee
+héézó	major
+héézuu	shoulder
+hehuné	once
+hehutsu	hold
+heiibaa	stable
+heiidzo	summer
+heiiyé	factory
+hemanii	restaurant
+hembe	offend
+hembo'uu	carry
+hembo'uu	lift
+hemubuu	neat
+henona	fight
+heuumé	graveyard
+hewiiuu	witch
+hewozuu	leaf
+hewozuu	sheet
+heyulé	grocer
+hezuchaa	prize
+hezuchaa	award
+hi	eight
+hó	run
+hoo	most
+i	story
+i	fable
+i	plot
+i	fiction
+i	narrative
+i	literature
+ié	ear
+ié	attention
+ié	have
+ié	own
+ii	need
+ii	require
+ii	oblige
+ii	need
+ii'a	tow
+ii'e	become
+ii'e	get
+iibaa	horse
+iibé	mask
+iibé	veil
+iibó	breakfast
+iichaa	benefit
+iiché	study
+iiché	study
+iichó	fan (enthusiast)
+iictii	decade
+iiduioo	rifle
+iiduu	spit
+iidza	seat
+iidza	chair
+iidza	buttocks
+iidzé	certain
+iidzéé	receive
+iidzóó	masturbate
+iiga	ugly
+iiguu	jaw
+iiha	church
+iiha	chapel
+iiha	shrine
+iihe	crawl
+iihe	creep
+iihé	room (of house)
+iihitsé	continue
+iihitsé	keep
+iihitsé	maintain
+iihitsé	sustain
+iihitsé	survive
+iihó	cute
+iihodzo	iron
+iiia	king
+iiiee	honest
+iiiee	pure
+iiiee	sincere
+iiiee	innocent
+iiiee	surprise
+iiiee	astonish
+iiiee	shock
+iiiee	startle
+iiiino	add
+iiió	none
+iiiogé	improve
+iike	spirit
+iike	soul
+iilé	establish
+iiloo	separate
+iilutóó	swallow
+iima	out
+iima	outside
+iimbuu	beside
+iime	unit
+iimé	hope
+iimé	hope
+iimohaa	charge
+iimomuu	laboratory
+iimoo	stuff
+iimulaa	race (competition)
+iinaa	along
+iiné	throw
+iiné	hurl
+iiné	fling
+iinga	naked
+iinga	nude
+iinga	bald
+iingee	gentle
+iingéé	influence
+iingi	story
+iingi	fable
+iingi	history
+iingi	plot
+iingi	narrative
+iingii	whole
+iingii	entire
+iingoiii	famous
+iinihoo	king
+iinihoo	emperor
+iinii	trial
+iinila	shade
+iinila	shadow
+iinó	committee
+iinoo	song
+iinóó	task
+iinóó	chore
+iipe	wear
+iipe	put on
+iipé	mouse
+iipee	planet
+iiséé	under
+iiséé	below
+iiséé puzé	dungeon
+iishe	carpet
+iishee	ass
+iisóó	fan
+iita	leg
+iita	thigh
+iita	lap
+iiwé	steel
+iiyé	light
+iiyé	illuminate
+iiyé	make
+iiyé	build
+iiyé	construct
+iiyé	cause
+iiyé pedze	have sex
+iiza	finger
+iiza	lock
+iiza iuméé	thumb
+iiza miidzé	fingerprint
+iize	idea
+iize	concept
+iize	theme
+iizéé	dish
+iizoo	theory
+iizumuu	mouth
+iu	air
+iu	breeze
+iu'a	warm
+iu'e	cough
+iu'ee	forefather
+iubaa	opening
+iubé	twist
+iubee	percent
+iubéé	brass
+iubóó	damage
+iubóó	damage
+iuchaa	quick
+iuchee	match (game)
+iuchee	contest
+iudidó	glove
+iudze	claw
+iudzé	stick
+iudzé	bat (club)
+iudzee	drink
+iudzee	sip
+iudzii	angry
+iudzii	mad
+iudzochéé	dust
+iudzoma	image
+iuge	favorite
+iugéé	fruit
+iuguu	cost
+iuguu	cost
+iuha	queen
+iuhéé	weather
+iuhii	normal
+iuhii	regular
+iuhó	device
+iuhó	gadget
+iuhuché	breathe
+iuie	good
+iuiee	massive
+iuiee	immense
+iuiee	enormous
+iuiuno	offer
+iuke	louse
+iukumbu	fly
+iulé	hot
+iulimee	extent
+iuluió	situation
+iumaa	copy
+iumaa	imitate
+iumaa	mimic
+iumaa	replicate
+iumbee	product
+iumbombuu	interrupt
+iumbóó	axe
+iume	drift
+iumé	hunger
+iumee	wheel
+iumee	disk
+iuméé	mother
+iuméé	stage
+iumii	write
+iumó	character
+iumó	persona
+iumoo	steal
+iumoo	rob
+iumukee	system
+iumuné	gender
+iumuu	fire
+iuné	tie
+iuné	attach
+iungé	forest
+iungé	jungle
+iungee	cover
+iungéé	erase
+iungoo	animal
+iungoo	beast
+iungoo	creature
+iungoo	organism
+iungoo	pet
+iungushii	state
+iungushii	declare
+iunguu	island
+iunó	awful
+iunó	terrible
+iunuu	beast
+iupee	ball
+iupee	sphere
+iupee	circle
+iupéé	love
+iupii	nail
+iusé	crack
+iusé	crack
+iuséé	vehicle
+iusha	sleep
+iusha	sleep
+iushaa	tide
+iushe	dark
+iushé	fourteen
+iushee	use
+iushee	utilize
+iushee	spend
+iushéé	decide
+iushii	number
+iushudé	smell (emit odour)
+iushudé	stink
+iusumaa	live
+iutaa	quick
+iutaa	swift
+iutee	rare
+iutee	weird
+iutee	strange
+iutee	funny
+iutsa	soldier
+iutsa	guerrilla
+iutse	whether
+iutsee	journey
+iutsee	tour
+iutsee	voyage
+iutsee	trail
+iutséé	box
+iutsó	forever
+iutsongi	boring
+iutuu	helmet
+iuu	all
+iuu	one
+iuu'é	emotion
+iuu'é	affection
+iuu'é	passion
+iuu'uu	brothel
+iuuba	discuss
+iuubee	square
+iuubó	box
+iuubó	crate
+iuuboo	way
+iuuboo	manner
+iuuboo	direction
+iuubudzee	like
+iuucté	slave
+iuudéé	coffee
+iuudéé mbadzé	cafe
+iuudzó	fin (of fish)
+iuudzusóó	powder
+iuugii	shame
+iuugii	stigma
+iuuha	expression
+iuuhé	tell
+iuuhé	disclose
+iuuhé	explain
+iuuiéé	wiggle
+iuuii	quiet
+iuuii	silent
+iuuiudzee	drunk (inebriated)
+iuuké	plan
+iuuké	program
+iuuké	plan
+iuukubé	apply
+iuulé	like
+iuulé	enjoy
+iuulóó	camera
+iuuma	protect
+iuumaa	race (competition)
+iuumaa	marathon
+iuume	delicious
+iuumé	stop
+iuumii	curious
+iuumó	pay
+iuumó	spend
+iuuna	blasphemy
+iuuna	heresy
+iuunaa	except
+iuunaa	besides
+iuune	exotic
+iuunga	belly
+iuungé	community
+iuuni	cut
+iuuni	slash
+iuuni	shave
+iuunise	wash
+iuunuhó	register
+iuunuhó	book
+iuupaa	grow
+iuupe	house
+iuupe	home
+iuupé	argue
+iuupéé	nineteen
+iuushe	understand
+iuushe	comprehend
+iuushe	fathom
+iuushó	holiday
+iuushó	vacation
+iuusó	put
+iuute	gap
+iuuté	equipment
+iuuté	apparatus
+iuutoo	hospital
+iuuwé	subtle
+iuuwii	show
+iuuwii	demonstrate
+iuuze	pain
+iuuze	agony
+iuuzé	letter (of an alphabet)
+iuuzó	hate
+iuuzó	resent
+iuuzoluu	liquid
+iuuzoo	join
+iuuzoo	connect
+iuuzoo	combine
+iuwaa	anybody
+iuwé	capacity
+iuwee	dirt
+iuwoo	mood
+iuwoo	attitude
+iuwóó	far
+iuyaa	stream
+iuyaa	creek
+iuyii	flame
+iuzaa	democracy
+iuze	apart
+iuzé	boat
+iuzé	yacht
+iuzihaa	tray
+iuzii	investigate
+iuzii	inspect
+iuzuha	money
+iuzuha	coin
+kastisho	castle
+le	go
+le	leave
+lectuló	section
+lectuló	piece
+lectuló	portion
+léé	even
+léébó	cave
+lééchaa	beak
+lééctóó	bit
+lééda	leg
+lééda iiza	toe
+léédé	green
+léédza	die
+léédzaa	athlete
+léédzé	organize
+léédzé	torch
+léédzéé	standard
+léédzéé	model
+léédzii	campaign
+léédzó	point
+léédzuu	tea
+lééga	win
+lééha	series
+lééha	sun
+lééha	day
+lééhé	wax
+lééhee	same
+lééhó	marry
+lééhóó	cord
+lééié	violent
+léékaa	text
+lééké	huge
+léélaa	nest
+léélaa	den
+léélee	acquire
+léélee	inherit
+léélee	specific
+léélee	definite
+léélee	particular
+léémbé	bucket
+léémé	combine
+léémó	either
+léénga	pour
+léénga	spill
+léénga	drain
+lééngii	train
+lééngii	coach
+léépé	afternoon
+léésé	interview
+léésii	staff
+léésii	crew
+léétee	drag
+léétó	find
+léétó	detect
+lééwaa	hard
+lééwé	fence
+lééwé	wall
+lééwoo	matter
+lééwuu	taste
+léézé	wire
+leioto	sometimes
+leiotsé	weak
+leiudzo	cast
+leke	shine
+leke	radiate
+lembudzé	glue
+lembudzé	cement
+lemipuu	salt
+lemipuu	spice
+lemipuu uuchee	sugar
+lemuduu	live
+lemuduu	survive
+lepiwéé	last (final)
+lepiwéé	former
+lese	wind
+li	turn
+li	rotate
+li	wind
+li	weave
+li	revolve
+li	with (using)
+lo	do
+lo	then
+ló	know (be aquainted with)
+loléédza	dead
+lomuula	final
+loo	cook (heat food)
+loo	cook (prepare food)
+louuióó	broken
+lu	live
+lu	survive
+lu	withstand
+luné	enjoy
+luzé	set
+luzé	couple
+ma	new
+ma'e	horn
+ma'é	direct
+ma'é	conduct
+maa	cook (prepare food)
+maa	from
+maba	vagina
+mabanéé	buxom
+mabee	intend
+mabéé	bitch
+mabuu	rib
+macha	skirt
+mache	suck
+mache	inhale
+mache	extract
+maché	soil
+maché	dust
+machéé	fund
+machóó	hot (attractive)
+machotse	drag
+machotse	draw
+madé	clear
+madé	clear
+madisó	smoke
+madisó	cloud
+madisó	dust
+madisó	steam
+madó	neighbor
+madzé	frog
+madzé	material
+madzichoo	chicken
+madzichoo	fowl
+madzozi	control
+mahaa	lamp
+mahi	plague
+mahii	care
+mahii	care
+mahitso	nephew
+mahó	ever
+mahoo	model
+mahuu	debate
+maia	spring (season)
+maiaa	rumor
+maiaa	gossip
+maié	save (put aside)
+maió	close
+maió	shut
+maiumo	assemble
+maiumo	train
+maiumo	rehearse
+maiuu	bottom (lowest part)
+maiuu	buttocks
+makee	friend
+makee	acquaintance
+makopi	single
+makuchu	warn
+makuchu	alert
+malaa	trunk (of tree)
+male	easy
+malé	fat
+malé	big
+maluu	identify
+maluu	point out
+maluu	refer
+mamaa	future
+mamaa	destiny
+mamaa	fate
+mambé	real
+mambé pulóó	essence
+mamboiuu	theater
+mamboiuu	stage
+mamboo	too
+mambuu	corpse
+mamé	baby
+mamee	anyway
+mamihaa	think
+mamihaa	understand
+mamihaa	ponder
+mamihaa	grasp
+mamii	main
+mana	race
+mana	ethnicity
+mané	special
+mangaa	though
+mangé	husband
+mangii	believe
+mangoo	crystal
+mangumuu	beautiful
+mangumuu	cute
+manii	meal
+manii	feast
+manii	festival
+mape	floor
+mape	ground
+mape	bottom (lowest part)
+mapii	someone
+mapii	somebody
+mapime	base
+mapime	foundation
+mapóó	last
+mapuche	sea
+mapuche	ocean
+mapumoo	abandon
+mapumoo	desert
+mapushe	cool (slightly cold)
+mapuu	list
+masee	structure
+maséé	volume
+masha	color
+masha	hue
+masha	paint
+mashii	human
+matii	size
+matoo	significant
+matóó	language
+matsó	aunt
+mawee	education
+mawoo	crash
+mawoo	collide
+mawóó	bullet
+mawuu	stem
+maze	distance
+maze	range
+mazee	news
+mazotsa	honor
+mazotsa	dignity
+mazotsa	pride
+mazuga	respect
+mazuga	respect
+mazuló	uniform
+mba	every
+mba	each
+mba	you (sg.)
+mbabaa	parcel
+mbabaa	package
+mbabaa	bundle
+mbabó	your (sg.)
+mbaboo	fort
+mbache	dangerous
+mbacta	roll
+mbacta	revolve
+mbacta	rotate
+mbacta	spin
+mbactóó	pencil
+mbadza	early
+mbadza	resource
+mbadzé	buy
+mbadzé	purchase
+mbadzé	shop
+mbadzó	shell
+mbagé	location
+mbaguyii	idea
+mbaguyii	theme
+mbaguyii	motif
+mbaha	medicine
+mbahe	borrow
+mbahé	while
+mbahi	pour
+mbahi	spill
+mbahi	drain
+mbahi	flow
+mbahi	profit
+mbaia	sort
+mbaié	wonder
+mbaiobé	secure
+mbaioo	gain
+mbaiuu	water
+mbakii	tomorrow
+mbalaa	guess
+mbalaa	estimate
+mbama	claim
+mbama	allege
+mbamba	egg
+mbamee	surprise
+mbamee	astonish
+mbamee	shock
+mbana	partner
+mbané	fun
+mbangaa	stretch
+mbani	tight
+mbanibéé	stick
+mbanii	straight
+mbanó	block
+mbanó	brick
+mbapa	jump
+mbasaa	cart
+mbasaa	wagon
+mbasé	right
+mbasé	entitlement
+mbasé	license
+mbasha	town
+mbashé	social
+mbatii	linen
+mbató	ticket
+mbató	voucher
+mbatóó	sink
+mbatóó	drown
+mbatsiméé	style
+mbatsiméé	fashion
+mbatsiméé	kind
+mbatsuge	enough
+mbatuu	detail
+mbawé	bark (of tree)
+mbawee	pair
+mbawee	duo
+mbawéé	maybe
+mbawéé	perhaps
+mbawó	violate
+mbay	you
+mbaybóy	your (pl.)
+mbazobuu	stick
+mbazoo	weather
+mbazoo	climate
+mbee	look
+mbee	consider
+mbel	the (inani. sg.)
+mbely	the (inani. pl.)
+mbó	because
+mbóó	could
+mbóóacta	scientist
+mbóóbachini	lawyer
+mbóóbaii	farmer
+mbóóbazaa	dealer
+mbóóbiiié	warrior
+mbóóbiipé	vendor
+mbóócta'a	liar
+mbóóctagó	leader
+mbóódiige	ruler
+mbóódziidza	manager
+mbóódziime	trader
+mbóódziinaa	teacher
+mbóógudzaa	chef
+mbóógudzaa	cook
+mbóógumuu	killer
+mbóóhééya	poet
+mbóóhó	runner
+mbóóiinoo	singer
+mbóóiiza	locksmith
+mbóóiumii	author
+mbóóiumii	writer
+mbóóiumii suzuu	copyright
+mbóóiumoo	thief
+mbóóiupéé	lover
+mbóóiuzé	sailor
+mbóómee	worker
+mbóómee	employee
+mbóómiikii	employer
+mbóómiizulóó	hunter
+mbóómuuné	florist
+mbóónuuia	dancer
+mbóónuumihé	drain
+mbóónuusé	owner
+mbóópuzé	prisoner
+mbóóseduta	judge
+mbóóshuupóó	artist
+mbóóshuutsee	guardian
+mbóóshuuzé	politician
+mbóósumaa	gardener
+mbóósuyuu	visitor
+mbóósuyuu	tourist
+mbóótsééné	dentist
+mbóóuu'ii	painter
+mbóóuumóó	player
+mbóóuungé	criminal
+mbóówashéé	driver
+mbóóyuché	editor
+mé	know (a fact)
+mé	understand
+méctawóó	usually
+mee	work
+mee	work
+mééépéé	exactly
+mééézé	previously
+méiidzé	certainly
+méiuchaa	quickly
+mélomuula	finally
+mémadé	clearly
+mémané	especially
+mépuia	probably
+mésééhóó	recently
+méyuni	suddenly
+mézuuma	simply
+mii	into
+mii	that
+mii'aa	sail
+mii'aa	cruise
+mii'aa	navigate
+mii'ó	society
+mii'uctu	year
+miiché	burst
+miiché	erupt
+miichó	wet
+miictade	bleed
+miictahé	prepare
+miida	pretty
+miidaa	prey
+miidzé	mark
+miidzé	send
+miidzé	transfer
+miidziidza	assassinate
+miidzó	throw
+miidzó	toss
+miidzó	hurl
+miidzó	fling
+miiegodzaa	defend
+miigé	bed
+miigé	mattress
+miiha	hiss
+miihe	cry
+miihe	order
+miihe	order
+miihe gumé	layout
+miihi	court
+miihi	tribunal
+miihii	pile
+miihii	heap
+miihó	that
+miihuu	stupid
+miihuu	dumb
+miihuu	dull
+miihuu	silly
+miiia	speed
+miiia	velocity
+miiiinoo	sing
+miiiubaa	open
+miiiumbee	produce
+miikaa	elixir
+miikii	employ
+miikó	citadel
+miikó	old
+miilé	machine
+miima	activity
+miimbaa	deep
+miimbaa	serious
+miimbee	chemical
+miime	foreign
+miimuupóó	authorize
+miinaa	orgasm
+miiné	technology
+miingó	metal
+miingóó	share
+miingóó	split
+miini	nut
+miini	seed
+miinó	person
+miinoo	mistake
+miinoo	error
+miipii	travel
+miipó	slow
+miipó	late
+miiséé	silver
+miiséé	money
+miiséébó	accompany
+miisééké	dream
+miishii	range
+miishii	spectrum
+miisó	native
+miita	serious
+miita	grave
+miita	sincere
+miite	brake
+miitse'ihu	weigh
+miitsó	speed
+miiwóó	state
+miiwóó	condition
+miiwóó	affirm
+miizé	often
+miizii	police
+miizuiizo	rate
+miizulóó	hunt
+miizuu	before
+móó	as
+móó	between
+móó	among
+muu	for (in favor of)
+muu	six
+muu'a	water
+muu'a	mirror
+muu'é	beer
+muu'é	song
+muu'é	music
+muu'uu	sock
+muua	crazy
+muua	insane
+muua	absurd
+muuabuióó	urban
+muuapiió	comfortable
+muubabé	healthy
+muuché	shoot
+muuché	fire (detonate weapon)
+muuctade	bloody
+muuctéé	button
+muuda	daughter
+muudee	behind
+muudee	back
+muudee gudzupe	spine
+muudiile	central
+muudóó	term
+muuduu	week
+muudziidzé	greedy
+muudziiió	reasonable
+muudziiió	logical
+muudzudzéé	nation
+muudzungóó	test
+muudzungóó	analyze
+muudzungóó	inspect
+muudzungóó	scrutinize
+muuezongó	painful
+muugee	drink
+muugee	drink
+muugudéé	messy
+muuha	dig
+muuha	scoop
+muuhaa	gay
+muuhaa	homosexual
+muuhe	fall
+muuhe	collapse
+muuhe'e	lucky
+muuhóó	happen
+muuhóó	occur
+muuiii	sleep
+muuiii	nap
+muuiiyé	bright
+muuiumé	hungry
+muuiuu	armor
+muuiuwee	dirty
+muuka	rib
+muukino	cool (fashionable)
+muukongo	despite
+muula	finish
+muula	end
+muulamé	bye
+muulé	source
+muulé	origin
+muulé	well
+muulóó	purple
+muumaa	elbow
+muumaze	distant
+muumazotsa	proud
+muumé	article
+muumee	animal
+muumee	creature
+muumó	according to
+muuné	flower
+muungii	brain
+muungumbuu	media
+muunoo	throughout
+muunu'umo	anxious
+muupaa	poor
+muupanoo	evident
+muupe	seed
+muupe	grain
+muupe dziilemuduu	semen
+muupedze	sexual
+muupee	yes
+muupii	tough
+muupii	robust
+muupóó	authority
+muupudzii	powerful
+muupushii	golden
+muusé	portion
+muusé	segment
+muuséédza	rich
+muushuudungoo	friendly
+muusii	burn
+muusii	light
+muusóó	develop
+muusóó	advance
+muusupii	young
+muutse'ihu	heavy
+muutsii	complain
+muuuudza	TRUE
+muuwe	curtain
+muuwe	veil
+muuwé	measure
+muuwé	calculate
+muuwó	reflect
+muuya	collar
+muuze	reward
+muuze	prize
+muuzee	seat
+muuzee	chair
+muuzee	stool
+muuzóó	discover
+muuzuu	morning
+muuzuudza	risky
+muuzuudzé	fashionable
+naa	how
+né	of
+né	when
+nii	want
+nii	desire
+nii	lack
+nu'a	angle
+nu'a	direction
+nu'umo	anxiety
+nuhó	root
+nuhó	source
+nukombo	destroy
+numumé	pump
+nusó	tired
+nutoiaa	crime
+nutoiaa	felony
+nuu	on
+nuu	tired
+nuu	lazy
+nuu'a	save
+nuu'a	rescue
+nuu'é	resident
+nuu'é	citizen
+nuuba	hour
+nuuchéé	focus
+nuudéé	word
+nuudéé	term
+nuudéé	name
+nuudza	case
+nuudza	event
+nuudza	situation
+nuudza	incident
+nuudza	equal
+nuudza	equivalent
+nuudzuu	course
+nuudzuu	direction
+nuuhe	hand
+nuuhe	react
+nuuhé	push
+nuuhee	strap
+nuuhéé	regret
+nuuhéé	lament
+nuuhoo	store
+nuuhoo	shop
+nuuia	dance
+nuuié	tomb
+nuula	stitch
+nuula	wheel
+nuulé	shore
+nuulé	coast
+nuulé	rib
+nuulóó	stable
+nuulóó	steady
+nuulóó	consistent
+nuuluu	appear
+nuumbee	blink
+nuumé	nature
+nuuméé	purpose
+nuumihé	drain
+nuumimee	snake
+nuumudzuu	otherwise
+nuuna	yesterday
+nuunge	least
+nuupee	male
+nuupoo	face
+nuupóó	silver
+nuupuu	opinion
+nuusé	own
+nuushe	information
+nuushe	data
+nuusó	bath
+nuute	arch
+nuute	arc
+nuutsé	debt
+nuuwé	different
+nuuwé	distinct
+nuuwé	various
+nuuwohuu	palm (of hand)
+nuuza	forehead
+nuuza	brow
+nuuzaa	wave (ocean)
+nuuzaa	surge
+nuuze	give
+nuuze	deliver
+nuuze	present
+nuuze	deposit
+nuuze	transfer
+nuuze	skin
+nuuze	leather
+nuuze biia	bark (of tree)
+nuzitsoo	population
+ó	nine
+oo	year
+oo	period
+óó	after
+pa	yet
+pa'a	pipe
+pa'a	valve
+pabaa	ornament
+padó	paradise
+padzii	castle
+padzii	palace
+padzimbi	deep
+pagéé	ceiling
+pagéé	maximum
+pahé	mud
+pahee	line
+palóó	world
+pama	progress
+pama	breakthrough
+pamogee	loud
+pamogee	noisy
+panaa	big
+panaa	large
+panaa iupéé	romance
+panga	serious
+panguchii	gate
+panguchii	exit
+panoo	evidence
+panoo	clue
+panoo	symptom
+panóó	cart
+panóó iumuu	train
+pashodé	teach
+pashodé	instruct
+pashodé	explain
+pashuu	tree
+pashuu	wood
+pashuu	shrub
+pashuu	bush
+pasóó	portion
+pawé	bark
+payaa	partner
+payaa	spouse
+pe	good
+pe	nice
+pe	great
+pe	I
+pe'e	wash
+pe'e	rinse
+pe'uto	role
+pebó	my
+pedze	coin
+pedze	currency
+pedze	sex
+pedze dziitaa	pubic hair
+pedzuma	market
+pedzuma	mall
+pedzume	next
+péé	concept
+péé'é	sixteen
+pééa	seventeen
+péébaa	shit
+péécha	profit
+pééché	window
+pééchó	sour
+péédéé	measure
+pééduu	there
+péédzii	candy
+péédzuu	wise
+pééé	know (a fact)
+pééé	know (be acquainted with)
+péége	wound
+péégé	direct
+pééha	design
+pééhó	river
+pééhó	stream
+pééhó	creek
+pééhóó	wolf
+pééiéé	arrow (weapon)
+pééiéé	arrow (sign)
+pééló	rank (military)
+péélóó	tail
+péélóó	rear
+pééma	indicate
+péémaa	punish
+péémaa	abuse
+péémaa	torture
+péémbé	progress
+péémbee	burn
+péémbee	light
+péémbee	simmer
+péémbóó	sap
+péémé	degree
+péémee	hair (of head)
+péémee	hair (of body)
+péémó	rice
+péémó	cereal
+péénaa	moon
+pééne	lunch
+pééné	empire
+péénguu	bulb
+péénoo	dry
+péénóó	place
+péénóó	site
+péénóó	scene
+péénuluu	giggle
+péénuu	laugh
+péépaa	starve
+péépii	bone
+péépuu	confident
+péésaa	needle
+péésee	father
+pééshó	page
+pééta	onto
+péété	embrace
+péétsuu	tread
+péétsuu	step on
+pééwaa	slow
+pééwó	book
+pééwó tsééshii	library
+péézé	specific
+péézé	definite
+péézé	particular
+péézé	distinct
+péézé	apparent
+péézéé	staff
+peholi	cure
+peke	look
+peme	push
+peme	shove
+pemuzuu	sense
+pengidzaa	light (weight)
+pengishaa	map
+pengishaa	chart
+pengishaa	graph
+pengishaa	diagram
+pengobuu	tire
+penuyoo	shore
+penuza	secret
+pepungi	torture
+peshulé	capital
+pey	we
+peybóy	our
+pi	more
+po	three
+pó	by (using the means of)
+pó	by (using a route)
+pó	now
+poo	in
+poo	within
+poo	just
+pu	why
+pu'ii	sun
+pu'ii cta	dusk
+pu'óó	whatever
+pu'uu	invite
+puba	quarter
+pubaa	candle
+pubóó	stick
+pubóó	cling
+puché	beyond
+puchó	student
+pudee	chance
+pudee	odds
+pudza	return
+pudza	go back
+pudza	return
+pudzaa	decide
+pudzaa	judge
+pudze	link
+pudzee	oil
+pudzee	grease
+pudzii	power
+pudzii	force
+pudzuu	plate
+pugé	target
+pugóó	family
+pugóó	kin
+puhee	country
+puhito	cow
+puhito	buffalo
+puhoo	world
+puhoo	sphere
+puhóó	well
+puia	probable
+puiaa	flag
+puiaa	banner
+puiaa	advertisement
+puiictu	empty
+puiictu	hollow
+pukaa	scale (skin of reptiles)
+pukee	enemy
+pukee	rebel
+pula	catch
+pulé	chew
+pulóó	quality
+puma	crazy
+puma	insane
+pumbaa	bad
+pumbaa	evil
+pumbee	skull
+pumbii	board
+pumé	spear
+pumé	lance
+pumé	pike
+pumé	dart
+pumoo	snow
+pumoo	snow
+pumuu	white
+pumuu	blank
+pumuu	plain
+puné	realize
+punge	anything
+pungé	river
+pungó	root
+punii	guest
+punii	patron
+punoo	away
+punóó	lounge
+punóó	couch
+punóó	sofa
+pupee	comb
+pupii	rail
+pupiléé	phone
+pupóó	course
+pupóó	tour
+pupuu	finger
+pusee	poise
+puséé	blade
+pushee	regular
+pushii	gold
+putee	popular
+putó	pepper
+putóó	impulse
+putséé	together
+putsii	carry
+putuu	funny
+puwa	include
+puwéé	amount
+puwéé	quantity
+puwii	air
+puwii	breeze
+puwii	weather
+puyii	thirteen
+puyóó	tomb
+puzaa	somewhat
+puzaa	fairly
+puzaa	pretty
+puzaa	quite
+puzaa	rather
+puzé	prison
+puzé	jail
+puzee	village
+puzee	suburb
+puzii	paste
+puzii	cream
+puzó	beach
+puzó	factor
+puzó	variable
+puzóó	warn
+puzuu	music
+se	hand
+se	wrist
+se	palm (of hand)
+se	ankle
+se	to
+se	towards
+se'e	desk
+se'ombo	upon
+sebe	wait
+seduta	justice
+sedziha	rhythm
+séé	say
+séé'é	sister
+séébó	company
+séécha	route
+sééchuu	flavor
+séécta	which
+séédza	wealth
+séédzaa	sew
+séédzé	expression
+séédzé	raise
+séédzé	elevate
+séédzé	tear
+séédzé	rip
+séée	grab
+sééga	face
+sééga	side
+sééga	front
+sééga	expression
+séégó	punish
+sééhaa	site
+sééhé	orange
+sééhé pungó	carrot
+sééhóó	recent
+sééiaa	rule
+sééió	stamp
+sééió	stamp
+sééké	dream
+sééle	bring
+sééle	fetch
+sééle	deliver
+sééle	carry
+sééluu	woman
+sééluu	wife
+sééluu	female
+sééluu	mother
+sééma	keep
+sééma	store
+séémba	permit
+séémba	enable
+séémé	soon
+séémii	cloud
+séémó	parcel
+séémó	package
+séémó	bundle
+séémó	packet
+séénaa	neck
+séénaa	collar
+sééné	frame
+sééné	hull
+séénge	mill
+sééngó	learn
+séénuluu	kitten
+séénuu	cat
+séépa	ink
+séépé	firm
+séépii	including
+séépuu	hide
+séétóó	pass
+séétóó	cross
+séétóó	develop
+sééwoo	eleven
+sééyóó	ant
+séézaa	sin
+séézaa	crime
+séézé	shake
+séézé	shock
+seie	wrist
+seiiko	area
+sengi	top
+seni	century
+seningoo	antique
+senozó	technical
+sese	thing
+sese	stuff
+sese	object
+shaa	call
+shé	many
+shé	this
+shé shuuné	tonight
+shéhedusa	sword
+shéiutséé	trunk (large box)
+shéiuubó	trunk (large box)
+shémiikó	ancient
+shétsééshii	mansion
+shuu	school
+shuu	academy
+shuu'a	theater
+shuu'a	arena
+shuu'é	parent
+shuube	bird
+shuube	penis
+shuuchéé	arch
+shuuchéé	arc
+shuuchéé	dome
+shuudaa	something
+shuudéé	grip
+shuudungoo	friend
+shuuha	cave
+shuuha	hole
+shuuié	victim
+shuuió	appearance (act of appearing)
+shuuke	rock
+shuuke	stone
+shuuké	trick
+shuuké	deceive
+shuuké	betray
+shuulé	land
+shuulé	earth
+shuulé	soil
+shuulé acta	geography
+shuuló	quiet
+shuuló	silent
+shuuló	shy
+shuuló	reluctant
+shuuló	gentle
+shuume	across
+shuumé	stay
+shuumé	remain
+shuumó	manner
+shuuna	job
+shuuné	night
+shuuné diiiii	midnight
+shuuné washé	owl
+shuunee	similar
+shuunga	grind
+shuunge	rest
+shuungikaa	magic
+shuungikaa muugee	potion
+shuungo'aa	cow
+shuunotó	servant
+shuunotó	waiter
+shuupii	rain
+shuupóó	art
+shuupóó	craft
+shuupóó	design
+shuupóó dziidzumboo	pottery
+shuuse	vision
+shuusha	second
+shuushé	among
+shuushee	cross
+shuushongé	over
+shuuta	wizard
+shuutidii	nobody
+shuutsa	supervisor
+shuutsé	come
+shuutsé	occur
+shuutsee	guard
+shuuwó	ass
+shuuyee	pin
+shuuzé	copper
+shuuzé	bronze
+shuuzé	politics
+si	talk
+si	speak
+so	try
+so	attempt
+so	strive
+so	intend
+su	big
+su	large
+su	huge
+su	it/they (sg.)
+su'oo	rise
+sua	create
+sua	invent
+subé	female
+subee	flood
+subii	silk
+subii	thread
+subó	divide
+subó	its/their (sg.)
+suchii	bow (decorative material)
+suchó	example
+sudaa	drama
+sudii	pile
+sudii	heap
+sudii	mound
+sudó	pig
+sudó uugé	pork
+sudzé	during
+sudzii	grab
+sudzii	clutch
+sudzii	grasp
+sudzó	chain
+sudzoo	poison
+sudzoo	venom
+sugii	deposit
+suha	price
+suha	fee
+suha	fare
+suha	tariff
+suhaa	stupid
+suhaa	dumb
+suhaa	dull
+suhaa	dim
+suhé	magazine
+suiee	hill
+suióó	perform
+suióó	behave
+sukéé	emotion
+sukéé	affection
+sul	he
+sulbó	his
+sulii	resident
+sulii	tenant
+suló	roof
+suma	peace
+sumaa	garden
+sumaa iugéé	orchard
+sumbó	moss
+sumé	build
+sumé	construct
+sumé	erect
+sumó	tool
+sumó	appliance
+sumóó	risk
+sumóó	threat
+suna	swim
+sunaa	tax
+sunee	trip
+sunee	stumble
+sungé	scale (instrument for weighing)
+sungee	start
+sungee	begin
+sungó	blow
+sungoo	local
+sunguu	tooth
+sunguu	tusk
+sunó	grass
+sunoo	somehow
+sunóó	event
+sunóó	incident
+supaa	month
+supé	fall
+supé	dive
+supé	stumble
+supee	nostril
+supii	youth
+supó	diner
+supuu	near
+susé	issue
+susé	concern
+susé	regret
+sushii	either
+susóó	train
+susóó	rehearse
+susuu	food
+susuu	cuisine
+susuu mapuu	menu
+suté	both
+sutee	stable
+sutee	steady
+sutsé	south
+sutuu	meet
+sutuu	steep
+suu	she
+suubó	her
+suwaa	step (one level of stairs)
+suy	they (sg.)
+suyaa	stock
+suybóy	their (sg.)
+suyuu	visit
+suyuu	visit
+suza	exercise
+suzee	left
+suzii	seem
+suzuu	right
+suzuu	correct
+tse	may
+tse	who
+tse'e	project
+tse'idzo	break
+tse'idzo	split
+tse'ihu	weight
+tse'utsi	grandfather
+tsebe	cheese
+tsebobee	eye
+tseche	language
+tseche	dialect
+tsedzinóó	eat
+tséé	sky
+tséé nuute	rainbow
+tséé'é	later
+tséé'uu	set
+tséébaa	very
+tséébaa	really
+tséébé	practice
+tsééché	design
+tsééchéé	corpse
+tséédé	hat
+tséédza	boy
+tséédze	crown
+tséédzé	heart
+tséédzé	tall
+tséédzii	chase
+tséédzóó	barely
+tséédzóó	hardly
+tséédzóó	rare
+tséée	empty
+tséée	hollow
+tséée	naked
+tséée	nude
+tséée	tired
+tséégó	smoke
+tsééhé	mix
+tsééhé	join
+tsééiaa	close
+tsééió	rod
+tsééió	shaft
+tsééió	bar
+tsééió	cane
+tsééiuu	meet
+tsééiuu	find
+tséékee	shift
+tséékuu	sheep
+tséélii	moment
+tsééma	climb
+tséémé	right (direction)
+tsééna	sure
+tsééné	tooth
+tsééné	fang
+tsééngé	thank
+tsééngémba	thanks
+tsééngóó	office
+tséénó	tax
+tséénó	tariff
+tséénóó	ring
+tséépa	alphabet
+tséépe	defecate
+tséépé	canvas
+tséépéé	sap
+tséépéé	glue
+tsééshii	grow up
+tsééshii	house
+tséésó	relate
+tséésó	correlate
+tséésuu	key
+tsééta	jewel
+tsééta	gem
+tséétee	never
+tséétoo	sudden
+tséétoo	abrupt
+tséétoo	swift
+tsééwaa	thousand
+tsééyó	linen
+tsééyó	fabric
+tsééyó	textile
+tséézé	kid
+tséézii	kiss
+tséézó	slip
+tséézó	star
+tséézoo	here
+tsege	present
+tsege	gift
+tseiubé	mention
+tseminuu	hook
+tsenizoo	miss (not take advantage of)
+tsepobe	neck
+tsepobe sudzó	necklace
+tseshe	please
+tsetse	boot
+tsezocha	confess
+tsezuza	any
+tsó	see
+tsó	understand
+tsó	grasp
+tsó	recognize
+tsoo	thing
+tsoo	object
+tsoo	item
+uu	would
+uu'ii	paint
+uu'odzo	cup
+uubéé	jerk
+uubó	balcony
+uubuu	think
+uubuu	ponder
+uubuu	meditate
+uuchee	sweet
+uuchó	forget
+uucta	fence
+uucta	barrier
+uucta	wall
+uucté	cell
+uuctombó	hallway
+uuctombó	corridor
+uuctoo	enemy
+uuctoo	villain
+uuctoo	rival
+uude	map
+uude	chart
+uudza	common
+uudza	truth
+uudzaa	smile
+uudzaa	smirk
+uudzingóó	forward
+uudzuu	class
+uudzuu	lesson
+uudzuu	ear
+uudzuu éépa	earring
+uuge	boyfriend
+uugé	meat
+uugé mbacta	barbecue
+uugóó	stand
+uuha	eye
+uuha dziiié	glasses
+uuha uunucta	eyeball
+uuha wamoo	eyelash
+uuha zuuzoo	eyelid
+uuhee	chin
+uuhi	tough
+uuhi	sturdy
+uuhi	robust
+uuhongi	regulate
+uuhoo	plenty
+uuió	hag (old woman)
+uuiombé	ray
+uuióó	break
+uuióó	smash
+uuióó	interrupt
+uuióó	shatter
+uukaa	clean
+uukaa	clean
+uukee	brush
+uukee	brush (for hair)
+uukee	broom
+uukisu	flat
+uukuu	tie
+uulaa	tear
+uule	gun
+uulé	kitchen
+uumaa	flour
+uumbe	leak
+uumbe	sink
+uumbé	effort
+uumbéé	shoe
+uumbéé	boot
+uumbité	hotel
+uumbóó	attack
+uumbowé	security
+uumé	grave
+uumee	shine
+uumee	glow
+uumee	glare
+uumee	radiate
+uumii	imagine
+uumii	envision
+uumii	assume
+uumóó	play (have fun)
+uumuu	bay
+uune	meal
+uune	feast
+uune	picnic
+uune	neither
+uuné	team
+uuné	couple
+uunéé	goal
+uungaa	arrive
+uungaa	reach
+uungé	crime
+uungii	harbor
+uunii	execute
+uunowéé	go
+uunucta	ball
+uupoo	reveal
+uuséé	protect
+uuséé	guard
+uuséé	prevent
+uuséé	justify
+uuséé	block
+uusha	well
+uushichuu	avoid
+uushigé	lens
+uushó	twenty
+uushuu	vague
+uutó	walk
+uutsaa	branch
+uutsé	stomach
+uutsé	gut
+uutsé	belly
+uutsii	rub
+uutsii	massage
+uutuluu	puppy
+uutuu	dog
+uuwe	rag
+uuwé	than
+uuwéé	fail
+uuwóó	roast
+uuyee	state
+uuyee	condition
+uuyee	say
+uuyéé	jar
+uuyuchu	torture
+uuyuchu	oppress
+uuza	kettle
+uuzé	offer
+uuzéé	third
+uuzii	excrement
+uuzii	shit
+wa	again
+wa	for (a period of time or length of distance)
+wa'ó	pink
+wa'uu	burst
+wa'uu	explode
+wa'uu	blow up
+wa'uu	blast
+wa'uu	shoot
+wa'uu	erupt
+wa'uu	fire (detonate weapon)
+wachaa	provide
+waché	leaf
+waché	petal
+wachó	climate
+wachóó	net
+wachuhi	must
+wachuhi	have to
+wadaa	officer
+wadaa	official
+wadza	right
+wadza	entitlement
+wadzé	interest
+wadzéé	pipe
+wadzii	recognize
+wadzuu	military
+wadzuu	raise
+wadzuu	elevate
+wadzuu	erect
+wagé	frown
+wagó	fiction
+waha	stiff
+waha	sturdy
+wahii	round
+wahii ctahó	biscuit
+wahocho	tongue
+wahocho	dialect
+wake	jump
+wake	skip
+wakodé	count
+wala	frame
+walé	act
+walé	behave
+walé	drown
+walé	drench
+walé	saturate
+walé	suffocate
+walee	ride
+waléé	throne
+walii	pull
+walii	yank
+walii	tug
+walii	tow
+waló	thigh
+walóó	late
+waluu	sand
+wame	army
+wamee	vision
+wamó	arrest
+wamoo	hair (of body)
+wamoo	fur
+wanaa	lose
+wané	vomit
+wanee	bee
+wanga	white
+wanga	blank
+wanga waséé	underwear
+wange	approach
+wangé	girl
+wangee	today
+wangoo	welcome
+wanoo	berry
+wanóó	patient
+wapidze	move
+wapii	bring
+wapungó	poison
+wasaa	excrement
+wasé	sneeze
+waséé	close
+waséé	intimate
+washé	bird
+washéé	drive
+washiduu	somewhere
+washuu	change
+washuu	change
+wasii	administration
+watimóó	storm
+watimóó	turmoil
+watóó	career
+watsii	history
+watsii	past
+wawó	shelf
+wawó	rack
+wawó	ledge
+wawó	counter (flat
+wawoo	nice
+wazaa	bark
+wazaa	roar
+wazé	less
+wazee	flow
+wazii	private
+wazóó	until
+wazuu	north
+wéé	at
+wéé	field
+wó	ask
+wó	consult
+wó	question
+wóbazóó	complicate
+wóiutsongi	bore
+woo	seven
+wóó	ten
+wóó	that
+wósutee	balance
+ye	be (temporary state)
+ye	rain
+ye	shower
+yi	child
+yi	offspring
+yo	up
+yo	up
+yu	help
+yu	assist
+yu'é	diamond
+yu'éé	mirror
+yu'uu	lizard
+yubakuu	flirtatious
+yubé	deserve
+yubéé	time
+yubéé	tense
+yubéé	stiff
+yuché	edit
+yuchee	swamp
+yuchuze	industry
+yuctoo	check
+yudzó	brother
+yudzó	remove
+yudzó	take out
+yudzó	deprive
+yudzó	take away
+yudzó	erase
+yue	road
+yue	street
+yue wangé	prostitute
+yuga	skilled
+yugé	edge
+yugizee	costume
+yugizee	garment
+yuguu	able
+yuguu	capable
+yuguu	competent
+yuha	cheap
+yuhéénoo	crtical
+yuhembe	offensive
+yuia	turn
+yuia	rotate
+yuii	nest
+yuke	lack
+yuké	available
+yukó	billion
+yula	sign
+yula	signal
+yulé	vegetable
+yuloo	internal
+yumahii	careful
+yumbazobuu	sticky
+yumé	chin
+yumé	jaw
+yumii	monster
+yumó	still
+yunaa	fit
+yunéé	limit
+yunéé	border
+yunéé	boundary
+yuni	sudden
+yuni	abrupt
+yunihoo	wave (ocean)
+yunii	court
+yupé	anyone
+yupishó	square
+yupishó	block
+yupuu	bottom (lowest part)
+yusha	shirt
+yusha	top (clothing)
+yushe	expert
+yushe	specialist
+yushé	clay
+yusoiii	door
+yusuu	bad
+yutsuu	count
+yutsuu	calculate
+yutuu	chest
+yuuumee	shiny
+yuwaa	mean
+yuwaa	vicious
+yuwe	avoid
+yuwe	avert
+yuwe	escape
+yuwé	credit (of money)
+yuyoo	cork
+yuze	continue
+yuze	keep
+yuze	maintain
+yuze	sustain
+yuzé	drop
+yuzó	bean
+zé	be (permanent state)
+zé	only
+zé	merely
+zude	possible
+zudzigoo	riot
+zue	past
+zuge	wind
+zuge	breeze
+zuie	rest
+zuie	nap
+zuiitsu	whistle
+zuiizo	rate
+zukuzo	wool
+zukuzo	fur
+zulodóó	bridge
+zuloo	grain
+zuloo	cereal
+zume	between
+zuméé	curtain
+zune	energy
+zuni	therefore
+zuni	thus
+zushéé	twelve
+zushongé	harmony
+zushongé	melody
+zushulé	word
+zushulé	name
+zushulé	phrase
+zushulé	slogan
+zushulé	name
+zutéé	inside
+zutsoe	wall
+zuu	time
+zuu	moment
+zuu	tense
+zuu	stiff
+zuu'ee	look
+zuu'ee	glance
+zuu'ó	spell
+zuu'óó	uncle
+zuubuchii	period
+zuuché	report
+zuuché	notify
+zuuché	inform
+zuuché	report
+zuudé	collect
+zuudé	compile
+zuudéé	group
+zuudó	wake
+zuudó	wake up
+zuudó	get up
+zuudza	risk
+zuudza	theory
+zuudza	premise
+zuudza	thesis
+zuudzé	force
+zuudzé	style
+zuudzé	fashion
+zuudzee	aim
+zuudzicte	lend
+zuudzicte	loan
+zuue	ban
+zuue	prohibit
+zuugé	referendum
+zuuguu	get
+zuuguu	obtain
+zuuguu	take
+zuuguu	possess
+zuuguu	acquire
+zuuha	gap
+zuuha	void
+zuuha	village
+zuuhee	cool (fashionable)
+zuuhee	casual
+zuuiee	judge
+zuuiié	hope
+zuuiié	wish
+zuuió	business
+zuuké	evening
+zuula	miss (not hit)
+zuulii	row
+zuuma	simple
+zuumaa	look
+zuume	plant
+zuumé	step
+zuumé	footstep
+zuumé dziikolo	footprint
+zuunaa	hurt
+zuunaa	injure
+zuunaa	harm
+zuungee	path
+zuungee	track
+zuungee	avenue
+zuungee	road
+zuungii	fine
+zuungó	rate
+zuungó	grade
+zuungoo	bill
+zuungoo	check
+zuunii	necessary
+zuunimbó	brown
+zuunó	curve
+zuupóó	spear
+zuupóó	lance
+zuupóó	pike
+zuushilé	guide
+zuute	difficult
+zuutuu	knee
+zuuwe	around
+zuuwó	slope
+zuuwó	slant
+zuuwó	ramp
+zuuwó	bank (river)
+zuuzé	increase
+zuuzé	expand
+zuuzé	boost
+zuuzokó	screw
+zuuzoo	top
+zuuzoo	mountain
+zuuzoo	lid
+zuzéé	accept
+zuzicha	spoon
+zuzicha héége	fork
+<!--------------------------------- ----------------------------------->
+</div>
+			<div id="title">Ingerish Pahalo Dictionary</div>
+
+			<div id="version">JS-Dictionar – v 1.02 - thank you u/hmslima</div>
+
+			<br>
+
+			<input type="text" id="inputTextArea" />
+			<input type="button" id="buttonDictionar" value="»»" onclick="startSbSearch ('listOfWords', 'inputTextArea', 'result', 99);" />
+			<a href="index.html" download><input type="button" id="buttonDictionar" value="⬇"/></a>
+
+			<script>
+				var inputButton = document.getElementById("inputTextArea");
+				inputButton.addEventListener("keyup", function(event) {
+					if (event.keyCode === 13) {
+						event.preventDefault();
+						document.getElementById("buttonDictionar").click();
+					}
+				});
+			</script>
+			
+			<br>
+			<br>
+			<div id="result"></div>
+		
+		</div>
+	</body>
+</html> 
